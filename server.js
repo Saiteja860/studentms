@@ -12,7 +12,13 @@ const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_FILE = path.join(__dirname, "data.json");
+// On Vercel the filesystem is read-only except /tmp — store data there and
+// seed it from the bundled data.json on first run.
+const IS_VERCEL = !!process.env.VERCEL;
+const DB_FILE = IS_VERCEL ? "/tmp/data.json" : path.join(__dirname, "data.json");
+if (IS_VERCEL && !fs.existsSync(DB_FILE)) {
+  fs.copyFileSync(path.join(__dirname, "data.json"), DB_FILE);
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -122,6 +128,11 @@ app.post("/api/fees/:studentId/pay", (req, res) => {
   res.json(db.fees[id]);
 });
 
-app.listen(PORT, () => {
-  console.log(`Student Management System running at http://localhost:${PORT}`);
-});
+// Exported for the Vercel serverless entry point (api/index.js);
+// only call listen() when started directly with `npm start`.
+module.exports = app;
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Student Management System running at http://localhost:${PORT}`);
+  });
+}
