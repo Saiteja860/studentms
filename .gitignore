@@ -1,0 +1,6 @@
+node_modules/
+npm-debug.log*
+*.log
+package-lock - Copy.json
+*.lnk
+.DS_Store
